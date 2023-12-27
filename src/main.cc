@@ -2,14 +2,27 @@
 #include "vec3.h"
 #include "color.h"
 #include "ray.h"
+#include "hittable.h"
+#include "hittable_list.h"
+#include "sphere.h"
+#include "interval.h"
+#include "rtweekend.h"
 
 
+bool is_inside(const vec3 &ray_direction, const vec3 &outward_normal) {
+    if (dot(ray_direction, outward_normal) > 0.0) {
+        // ray is inside the sphere
+        return false;
+    } else {
+        // ray is outside the sphere
+        return true;
+    }
+}
 
-color ray_color(const ray& r) {
-    auto t = hit_sphere(point3(0,0,-1), 0.5, r);
-    if (t > 0.0) {
-        vec3 N = unit_vector(r.at(t) - vec3(0,0,-1));
-        return 0.5*color(N.x()+1, N.y()+1, N.z()+1);
+color ray_color(const ray& r, const hittable_list& world) {
+    hit_record rec;
+    if (world.hit(r, interval(0, infinity), rec)) {
+        return 0.5 * (rec.normal + color(1,1,1));
     }
 
     vec3 unit_direction = unit_vector(r.direction());
@@ -19,12 +32,13 @@ color ray_color(const ray& r) {
 
 
 int main() {
+    // world
+    hittable_list world;
+
+    world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
     // Image
-
-    //int image_width = 256;
-    //int image_height = 256;
-
     auto ideal_aspect_ratio = 16.0 / 9.0;
     int image_width = 400;
 
@@ -62,7 +76,7 @@ int main() {
             auto ray_direction = pixel_center - camera_center;
             ray r(camera_center, ray_direction);
 
-            color pixel_color = ray_color(r);
+            color pixel_color = ray_color(r, world);
             write_color(std::cout, pixel_color);
         }
     }
