@@ -6,6 +6,8 @@
 #include "color.h"
 #include "hittable.h"
 
+int SHADOW_ACNE_TOL = 0.001;
+
 class camera {
   public:
     /* Public Camera Parameters Here */
@@ -88,8 +90,9 @@ class camera {
         if (depth <= 0)
             return color(0,0,0);
 
-        if (world.hit(r, interval(0, infinity), rec)) {
-            vec3 direction = random_on_hemisphere(rec.normal);
+        if (world.hit(r, interval(SHADOW_ACNE_TOL, infinity), rec)) {
+            // TODO TODO is this lambertian?
+            vec3 direction = rec.normal + random_unit_vector();
             return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
         }
 
