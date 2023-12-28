@@ -12,6 +12,7 @@ class camera {
     double ideal_aspect_ratio = 1.0;
     int image_width = 100;
     int samples_per_pixel = 10;   // Count of random samples for each pixel
+    int max_depth = 10;   // Maximum number of ray bounces into scene
 
     void render(const hittable_list& world) {
         initialize();
@@ -24,7 +25,7 @@ class camera {
                 color pixel_color(0, 0, 0);
                 for (int k = 0; k < samples_per_pixel; k++) {
                     ray ray_ = get_ray(i, j);
-                    pixel_color += ray_color(ray_, world);
+                    pixel_color += ray_color(ray_, max_depth, world);
                 }
                 write_color(std::cout, pixel_color, samples_per_pixel);
             }
@@ -81,11 +82,15 @@ class camera {
     }
 
 
-    color ray_color(const ray& r, const hittable_list& world) {
+    color ray_color(const ray& r, int depth, const hittable_list& world) {
         hit_record rec;
+        // If we've exceeded the ray bounce limit, no more light is gathered.
+        if (depth <= 0)
+            return color(0,0,0);
+
         if (world.hit(r, interval(0, infinity), rec)) {
             vec3 direction = random_on_hemisphere(rec.normal);
-            return 0.5 * ray_color(ray(rec.p, direction), world);
+            return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
