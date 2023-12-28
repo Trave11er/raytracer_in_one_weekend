@@ -91,9 +91,11 @@ class camera {
             return color(0,0,0);
 
         if (world.hit(r, interval(SHADOW_ACNE_TOL, infinity), rec)) {
-            // TODO TODO is this lambertian?
-            vec3 direction = rec.normal + random_unit_vector();
-            return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
+            ray scattered;
+            color attenuation;
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
+                return attenuation * ray_color(scattered, depth-1, world);
+            return color(0,0,0);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
