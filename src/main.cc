@@ -23,7 +23,6 @@ bool is_inside(const vec3 &ray_direction, const vec3 &outward_normal) {
 
 int main() {
     hittable_list world;
-
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
     auto material_left   = make_shared<dielectric>(1.5);
@@ -41,5 +40,11 @@ int main() {
     cam.image_width  = 400;
     cam.samples_per_pixel = 100;
     cam.max_depth = 50;
+
+    cam.vfov = 20;
+    cam.lookfrom = point3(-2, 2, 1);
+    cam.lookat = point3(0, 0, -1);
+    cam.vup = vec3(0, 1, 0);
+
     cam.render(world);
 }
