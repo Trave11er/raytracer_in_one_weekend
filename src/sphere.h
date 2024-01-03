@@ -2,10 +2,10 @@
 
 class sphere : public hittable {
   public:
-    sphere(point3 _center, double _radius, shared_ptr<material> _material) : center(_center), radius(_radius), mat(_material) {}
+    point3 center;
+    sphere(point3 _center, double _radius, material *_material) : center(_center), radius(_radius), mat(_material) {}
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-
+    bool hit(const ray& r, const interval ray_t, hit_record& rec) const override {
         vec3 oc = r.origin() - center;
         auto a = dot(r.direction(), r.direction());
         auto b = 2.0 * dot(oc, r.direction());
@@ -32,7 +32,6 @@ class sphere : public hittable {
         return true;
     }
   private:
-    point3 center;
     double radius;
-    shared_ptr<material> mat;
+    material *mat;
 };

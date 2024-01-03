@@ -36,4 +36,14 @@ void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
         << static_cast<int>(256 * intensity.clamp(b)) << '\n';
 }
 
+void write_color_arr(std::ostream &out, color* color_arr, int image_height, int image_width, int samples_per_pixel) {
+    for (int i=0; i < image_height; i++) {
+        for (int j = 0; j < image_width; j++) {
+            auto pixel_color = color_arr[i * image_width + j];
+            write_color(out, pixel_color, samples_per_pixel);
+
+        }
+    }
+}
+
 #endif

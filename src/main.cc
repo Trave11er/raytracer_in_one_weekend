@@ -1,4 +1,6 @@
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include "vec3.h"
 #include "color.h"
 #include "ray.h"
@@ -20,84 +22,19 @@ bool is_inside(const vec3 &ray_direction, const vec3 &outward_normal) {
     }
 }
 
+int main( int argc, char* argv[] ) {
+    int THREAD_NUM = std::stoi(argv[1]);
+    std::clog << THREAD_NUM << std::endl;
 
-int main() {
-    hittable_list world;
-    /*
-    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-    auto material_left   = make_shared<dielectric>(1.5);
-    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
-
-    world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
-    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
-    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
-    world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
-
+    // camera
     camera cam;
 
     cam.ideal_aspect_ratio = 16.0 / 9.0;
-    cam.image_width  = 400;
-    cam.samples_per_pixel = 100;
-    cam.max_depth = 50;
+    cam.image_width        = 240;
+    cam.samples_per_pixel  = 500;
+    cam.max_depth          = 5;
 
-    cam.vfov = 20;
-    cam.lookfrom = point3(-2, 2, 1);
-    cam.lookat = point3(0, 0, -1);
-    cam.vup = vec3(0, 1, 0);
-
-    cam.defocus_angle = 10.0;
-    cam.focus_dist    = 3.4;
-    */
-    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
-
-    for (int a = -5; a < 5; a++) {
-        for (int b = -5; b < 5; b++) {
-            auto choose_mat = random_double();
-            point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
-
-            if ((center - point3(4, 0.2, 0)).length() > 0.9) {
-                shared_ptr<material> sphere_material;
-
-                if (choose_mat < 0.8) {
-                    // diffuse
-                    auto albedo = color::random() * color::random();
-                    sphere_material = make_shared<lambertian>(albedo);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material));
-                } else if (choose_mat < 0.95) {
-                    // metal
-                    auto albedo = color::random(0.5, 1);
-                    auto fuzz = random_double(0, 0.5);
-                    sphere_material = make_shared<metal>(albedo, fuzz);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material));
-                } else {
-                    // glass
-                    sphere_material = make_shared<dielectric>(1.5);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material));
-                }
-            }
-        }
-    }
-
-    auto material1 = make_shared<dielectric>(1.5);
-    world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
-
-    auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
-    world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
-
-    auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
-    world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
-
-    camera cam;
-
-    cam.ideal_aspect_ratio      = 16.0 / 9.0;
-    cam.image_width       = 240;
-    cam.samples_per_pixel = 500;
-    cam.max_depth         = 20;
-
-    cam.vfov     = 20;
+    cam.vfov     = 5;
     cam.lookfrom = point3(13,2,3);
     cam.lookat   = point3(0,0,0);
     cam.vup      = vec3(0,1,0);
@@ -105,5 +42,61 @@ int main() {
     cam.defocus_angle = 0.6;
     cam.focus_dist    = 10.0;
 
-    cam.render(world);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    cam.initialize();
+
+    std::vector<std::thread> threads;
+    int image_width = cam.image_width;
+    int image_height = cam.image_height;
+    int samples_per_pixel = cam.samples_per_pixel;
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+    // world
+    hittable_list world;
+
+    // movement
+    for (int frame=0; frame < 1; frame++) {
+    world.clear();
+    material *ground_material = new lambertian(color(0.5, 0.5, 0.5));
+    world.add(new sphere(point3(0,-1000,0), 1000, ground_material));
+
+    for (int a = -1; a < 1; a++) {
+        for (int b = -1; b < 1; b++) {
+            auto choose_mat = random_double();
+            point3 center(0.1*a + 0.09*random_double(), 0.2, 0.1*b + 0.09*random_double());
+
+            if ((center - point3(4, 0.2, 0)).length() > 0.9) {
+                material* sphere_material;
+
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    //auto albedo = random_vec() * random_vec();
+                    auto albedo = color(0.1, 0.5, 0.3);
+                    sphere_material = new lambertian(albedo);
+                    world.add(new sphere(center, 0.2, sphere_material));
+               }
+            }
+        }
+    }
+
+    // loop
+    color *color_arr = new color[image_width * image_height];
+    int row_end = 0, row_start = -1;
+    for (int m = 0; m < THREAD_NUM; m++) {
+        row_start = row_end;
+        row_end = static_cast<int>(round((m + 1) * image_height * image_width / THREAD_NUM));
+        std::thread t(calculate_block, row_start, row_end, std::ref(world), std::ref(cam), std::ref(color_arr));
+        threads.push_back(std::move(t));
+    }
+
+    for (std::thread& t : threads)
+    {
+        t.join();
+    }
+    write_color_arr(std::cout, color_arr, image_height, image_width, samples_per_pixel);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::clog << "\rDone.                 \n";
+    std::clog << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+
+    }
 }

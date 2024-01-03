@@ -20,7 +20,6 @@ class vec3 {
 
     vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
     double operator[](int i) const { return e[i]; }
-    //double& operator[](int i) { return e[i]; }
 
     vec3& operator+=(const vec3 &v) {
         e[0] += v.e[0];
@@ -51,14 +50,6 @@ class vec3 {
         // Return true if the vector is close to zero in all dimensions.
         auto s = 1e-8;
         return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
-    }
-
-    static vec3 random() {
-        return vec3(random_double(), random_double(), random_double());
-    }
-
-    static vec3 random(double min, double max) {
-        return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
     }
 
 
@@ -119,15 +110,24 @@ inline vec3 random_in_unit_disk() {
     }
 }
 
+inline vec3 random_vec() {
+    return vec3(random_double(), random_double(), random_double());
+}
+
+inline vec3 random_vec(double min, double max) {
+    return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
+}
+
+
 inline vec3 random_in_unit_sphere() {
     while (true) {
-        auto p = vec3::random(-1,1);
+        auto p = random_vec(-1,1);
         if (p.length_squared() < 1)
             return p;
     }
 }
 
-// TODO TODO is this rejection method equivalent to sampling over uniform theta, phi
+// TODO is this rejection method equivalent to sampling over uniform theta, phi
 inline vec3 random_unit_vector() {
     return unit_vector(random_in_unit_sphere());
 }
