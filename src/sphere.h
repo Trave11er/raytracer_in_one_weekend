@@ -2,7 +2,6 @@
 
 class sphere : public hittable {
   public:
-    point3 center;
     sphere(point3 _center, double _radius, material *_material) : center(_center), radius(_radius), mat(_material) {}
 
     bool hit(const ray& r, const interval ray_t, hit_record& rec) const override {
@@ -32,6 +31,7 @@ class sphere : public hittable {
         return true;
     }
   private:
+    point3 center;
     double radius;
     material *mat;
 };

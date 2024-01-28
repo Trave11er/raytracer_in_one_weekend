@@ -27,3 +27,6 @@ sxiv image_new.ppm
 
 TODO TODO insert commit hash after rebase
 ![myimg](images/final_image.png)
+
+
+For smoothing viewing of updatable image can use `sxiv`

@@ -38,6 +38,10 @@ class hittable_list : public hittable {
 
         return hit_anything;
     }
+
+    size_t size() {
+        return objects.size();
+    }
 };
 
 #endif
