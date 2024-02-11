@@ -1,0 +1,14 @@
+# Build artifacts
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+
+# Binaries
+inOneWeekend
+
+# Output images
+*.ppm
+
+# IDE
+.vscode/

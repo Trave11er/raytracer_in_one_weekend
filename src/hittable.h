@@ -4,6 +4,7 @@
 #include "ray.h"
 #include "interval.h"
 #include "rtweekend.h"
+#include "config.h"
 
 class material;
 
@@ -11,7 +12,7 @@ class hit_record {
   public:
     point3 p;
     vec3 normal;
-    material* mat;  // having this as shared_ptr made everything much slower; false sharing?
+    material* mat;  // having this as shared_ptr made everything much slower when multithreaded
     double t;
 };
 
@@ -19,7 +20,15 @@ class hittable {
   public:
     virtual ~hittable() = default;
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec, const double frac=1.0) const = 0;
+    material *mat;
+};
+
+class implicit_surface : public hittable {
+  public:
+    virtual double get_potential(const point3 point) const = 0;
+    virtual vec3 get_potential_gradient(const point3 point) const = 0;
+    virtual bool get_ray_bounds(const ray& r, double& t0, double& t1) const = 0;
 };
 
 class material {

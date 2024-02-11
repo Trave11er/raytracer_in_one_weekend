@@ -11,26 +11,24 @@
 #include "interval.h"
 #include "rtweekend.h"
 #include "camera.h"
+#include <cmath>
 
 
-bool is_inside(const vec3 &ray_direction, const vec3 &outward_normal) {
-    if (dot(ray_direction, outward_normal) > 0.0) {
-        // ray is inside the sphere
-        return false;
-    } else {
-        // ray is outside the sphere
-        return true;
-    }
-}
+double MAX_SPEED = 0.05;
+bool DEBUG = false;
 
 class PosVel {
     public:
         PosVel() {
-            px = random_double();
-            py = random_double();
-            vx = 0.1 * random_double();
-            vy = 0.1 * random_double();
+            px = random_double() * 2 - 1;
+            py = random_double() * 2 - 1;
+            vx = MAX_SPEED * (random_double() * 2 - 1);
+            vy = MAX_SPEED * (random_double() * 2 - 1);
+            if (DEBUG)
+                vy = 0;
         }
+
+        PosVel(double px_, double py_, double vx_, double vy_) : px(px_), py(py_), vx(vx_), vy(vy_) {}
 
         void update() {
             px += vx;
@@ -42,8 +40,7 @@ class PosVel {
             if (py > 1)
                 vy *= -1;
             if (py < -1)
-                vy *= -1;
-        }
+                vy *= -1;        }
 
         point3 get_center() {
             return point3(px, 0.2, py);
@@ -54,7 +51,6 @@ class PosVel {
         double vx, vy;
 };
 
-
 int main( int argc, char* argv[] ) {
     int THREAD_NUM = std::stoi(argv[1]);
     std::clog << THREAD_NUM << std::endl;
@@ -63,17 +59,17 @@ int main( int argc, char* argv[] ) {
     camera cam;
 
     cam.ideal_aspect_ratio = 16.0 / 9.0;
-    cam.image_width        = 240;
+    cam.image_width        = 480;
     cam.samples_per_pixel  = 100;
-    cam.max_depth          = 5;
+    cam.max_depth          = 10;
 
-    cam.vfov     = 5;
-    cam.lookfrom = point3(13,2,3);
-    cam.lookat   = point3(0,0,0);
+    cam.vfov     = 30;
+    cam.lookfrom = point3(0, 1, 3);
+    cam.lookat   = point3(0, 0.2, 0);
     cam.vup      = vec3(0,1,0);
 
-    cam.defocus_angle = 0.6;
-    cam.focus_dist    = 10.0;
+    cam.defocus_angle = 0;
+    cam.focus_dist    = 3.0;
 
     cam.initialize();
 
@@ -81,20 +77,29 @@ int main( int argc, char* argv[] ) {
     int image_width = cam.image_width;
     int image_height = cam.image_height;
     int samples_per_pixel = cam.samples_per_pixel;
-    //std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     // world
     hittable_list world;
-    int num_objects = 10;
+    int num_objects = 5;
+    if (DEBUG)
+        num_objects = 2;
     std::vector<PosVel> pos_vel_vec;
     // initialise movement
-    for (int i = 0; i < num_objects; i++) {
-        PosVel pv = PosVel();
-        pos_vel_vec.push_back(pv);
+    if (DEBUG) {
+        pos_vel_vec.push_back(PosVel(-0.5, 0.0, MAX_SPEED, 0));
+        pos_vel_vec.push_back(PosVel( 0.5, 0.0, -MAX_SPEED, 0));
+    } else {
+        for (int i = 0; i < num_objects; i++) {
+            PosVel pv = PosVel();
+            pos_vel_vec.push_back(pv);
+        }
     }
 
     // movement
-    for (int frame=0; frame < 100; frame++) {
+    int num_frames = 100;
+    if (DEBUG)
+        num_frames = 30;
+    for (int frame=0; frame < num_frames; frame++) {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         world.clear();
         threads.clear();  // makes sure we don't try to join a threads more than once (see below)
@@ -105,12 +110,10 @@ int main( int argc, char* argv[] ) {
         for (int i = 0; i < num_objects; i++) {
             pos_vel_vec[i].update();
             material* sphere_material;
-            auto choose_mat = random_double();
             auto albedo = color(0.1, 0.5, 0.3);
             sphere_material = new lambertian(albedo);
             auto center = pos_vel_vec[i].get_center();
-            world.add(new sphere(center, 0.2, sphere_material));
-
+            world.add_blob(new sphere(center, RADIUS, sphere_material));
         }
 
         // loop
@@ -128,11 +131,12 @@ int main( int argc, char* argv[] ) {
             t.join();
         }
         std::ofstream ofs;
+        // this is the name of the file being updated
         ofs.open ("image_new.ppm", std::ofstream::out | std::ofstream::trunc);
-        //write_color_arr(std::cout, color_arr, image_height, image_width, samples_per_pixel);
         ofs << "P3\n" << image_width << ' ' << image_height << "\n255\n";
         write_color_arr(ofs, color_arr, image_height, image_width, samples_per_pixel);
         ofs.close();
+        delete[] color_arr;
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::clog << "Done in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
     }
